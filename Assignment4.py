@@ -1,14 +1,7 @@
-"""
-================================
-Recognizing hand-written digits
-================================
-This example shows how scikit-learn can be used to recognize images of
-hand-written digits, from 0-9.
-"""
 
 # Author: Gael Varoquaux <gael dot varoquaux at normalesup dot org>
 # License: BSD 3 clause
-from statistics import median
+# from statistics import median
 # Standard scientific Python imports
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,20 +9,7 @@ import numpy as np
 from sklearn import datasets, svm, metrics, tree
 from sklearn.model_selection import train_test_split
 from skimage import transform
-from tabulate import tabulate
-###############################################################################
-# Digits dataset
-# --------------
-#
-# The digits dataset consists of 8x8
-# pixel images of digits. The ``images`` attribute of the dataset stores
-# 8x8 arrays of grayscale values for each image. We will use these arrays to
-# visualize the first 4 images. The ``target`` attribute of the dataset stores
-# the digit each image represents and this is included in the title of the 4
-# plots below.
-#
-# Note: if we were working from image files (e.g., 'png' files), we would load
-# them using :func:`matplotlib.pyplot.imread`.
+# from tabulate import tabulate
 
 def new_data(data,size):
 	new_features = np.array(list(map(lambda img: transform.resize(
@@ -44,20 +24,7 @@ for ax, image, label in zip(axes, digits.images, digits.target):
     ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
     ax.set_title("Training: %i" % label)
 '''
-###############################################################################
-# Classification
-# --------------
-#
-# To apply a classifier on this data, we need to flatten the images, turning
-# each 2-D array of grayscale values from shape ``(8, 8)`` into shape
-# ``(64,)``. Subsequently, the entire dataset will be of shape
-# ``(n_samples, n_features)``, where ``n_samples`` is the number of images and
-# ``n_features`` is the total number of pixels in each image.
-#
-# We can then split the data into train and test subsets and fit a support
-# vector classifier on the train samples. The fitted classifier can
-# subsequently be used to predict the value of the digit for the samples
-# in the test subset.
+
 user_split = 0.5
 # flatten the images
 n_samples = len(digits.images)
@@ -68,7 +35,7 @@ print(" ")
 print('For Image Size = '+str(user_size)+'x'+str(user_size)+' and Train-Val-Test Split => '+str(int(100*(1-user_split)))+
 	'-'+str(int(50*user_split))+'-'+str(int(50*user_split)))
 
-GAMMA = [100,10,1,0.1]
+GAMMA = [0.05,0.003,0.002, 0.004]
 C = [0.5,1,2,4]
 
 best_gam = 0
@@ -78,14 +45,17 @@ best_train=0
 best_val=0
 best_test=0
 table = [['Gamma','C','Training Acc.','Dev Acc.','Test Acc.']]
-
+sum_cal, sum_svm = 0,0
 accuracy_val1 =[]
 accuracy_training =[]
 accuracy_val2 =[]
-X_train, X, y_train, y = train_test_split(data, digits.target, test_size=user_split, shuffle=False)
-x_val, x_test, y_val, y_test = train_test_split(X,y,test_size=0.5,shuffle=False)
+list_train= [0.5, 0.8, 0.10, 0.9, 0.15]
+list_test= [0.5, 0.2, 0.90, 0.1, 0.05]
 
-def  classifier_svm():
+
+def  classifier_svm(X_train, X, y_train, y, x_val, x_test, y_val, y_test):
+	sum_cal= 0
+
 	for GAM in GAMMA:
 		for c in C:
 			hyper_params = {'gamma':GAM, 'C':c}
@@ -98,11 +68,16 @@ def  classifier_svm():
 			accuracy_val = 100*metrics.accuracy_score(y_val,predicted_val)
 			accuracy_train = 100*metrics.accuracy_score(y_train, predicted_train)
 			accuracy_test = 100*metrics.accuracy_score(y_test, predicted_test)
+
 			accuracy_val1.append(accuracy_val)
 			accuracy_training.append(accuracy_train)
 			accuracy_val2.append(accuracy_test)
+	for i in range(len(accuracy_val2)):
+		sum_cal+= accuracy_val2[i]
+	return sum_cal/len(accuracy_val2)
 
-def  classifier_decision_tree():
+
+def  classifier_decision_tree(X_train, X, y_train, y, x_val, x_test, y_val, y_test):
 	clf = tree.DecisionTreeClassifier()
 	clf.fit(X_train, y_train)
 	predicted_val = clf.predict(x_val)
@@ -111,6 +86,16 @@ def  classifier_decision_tree():
 	accuracy_val = 100*metrics.accuracy_score(y_val,predicted_val)
 	accuracy_train = 100*metrics.accuracy_score(y_train, predicted_train)
 	accuracy_test = 100*metrics.accuracy_score(y_test, predicted_test)
+	return accuracy_test
 
-classifier_svm()
-classifier_decision_tree()
+for val in range(len(list_train)):
+	X_train, X, y_train, y = train_test_split(data, digits.target, test_size=list_train[val],shuffle=False)
+	x_val, x_test, y_val, y_test = train_test_split(X,y,test_size=list_test[val],shuffle=False)
+	svm_val= classifier_svm(X_train, X, y_train, y, x_val, x_test, y_val, y_test)
+	classifier_val= classifier_decision_tree(X_train, X, y_train, y, x_val, x_test, y_val, y_test)
+	print("svm: {} , classifier_val: {} ".format(str(svm_val), str(classifier_val)))
+	
+	sum_cal+= classifier_val
+	sum_svm+= svm_val
+
+print("SVM_mean: {} , classifier_mean: {} ".format(str(sum_svm/5), str(sum_cal/5)))
