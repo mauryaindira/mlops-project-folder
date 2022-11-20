@@ -19,8 +19,7 @@ from utils import (
 from joblib import dump, load
 
 train_frac, dev_frac, test_frac = 0.8, 0.1, 0.1
-assert train_frac + dev_frac + test_frac == 1.0
-
+assert train_frac 
 # 1. set the ranges of hyper parameters
 gamma_list = [0.01, 0.005, 0.001, 0.0005, 0.0001]
 c_list = [0.1, 0.2, 0.5, 0.7, 1, 2, 5, 7, 10]
@@ -53,7 +52,7 @@ n_cv = 5
 results = {}
 for n in range(n_cv):
     x_train, y_train, x_dev, y_dev, x_test, y_test = train_dev_test_split(
-        data, label, train_frac, dev_frac
+        data, label, train_frac, dev_frac, test_size=0.33, random_state=42
     )
     # PART: Define the model
     # Create a classifier: a support vector classifier
