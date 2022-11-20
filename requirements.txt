@@ -1,1 +1,1 @@
-numpy 
+pytest==7.2.0
